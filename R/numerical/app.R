@@ -9,10 +9,20 @@ metadata_api <- paste(config$data_api, "/", config$metadata_path, sep = "")
 ui <- function(request) {
     fluidPage(
         uiOutput("title"),
-        tags$div(
-            id = "dimension",
-            uiOutput("first_dimension")
-        ),
+        sidebarLayout(
+            sidebarPanel(
+                tags$div(
+                    id = "dimension",
+                    uiOutput("first_dimension"),
+                    uiOutput("second_dimension")
+                ),
+            ),
+            mainPanel(
+                includeHTML("./app.html"),
+                plotlyOutput("plot"),
+                width = 10,
+            )
+        )
     )
 }
 
@@ -31,8 +41,19 @@ set_first_dimension <- function(output, dimensions) {
     })
 }
 
+set_second_dimension <- function(input, output, dimensions) {
+    dimensions <- dimensions[dimensions != input$dimension]
+    output$second_dimension <- renderUI({
+        selectInput("second_dimension",
+            label = "Second Dimension:",
+            choices = dimensions
+        )
+    })
+}
+
 
 server <- function(input, output, session) {
+    dimensions <- list()
     observe({
         query <- shiny::parseQueryString(session$clientData$url_search)
         request <- list("variable" = query$variable)
@@ -42,13 +63,17 @@ server <- function(input, output, session) {
             encode = "json"
         )
         metadata <- jsonlite::fromJSON(httr::content(data, "text"))
-        cat(file = stderr(), paste("data: ", metadata, "\n"))
-
 
         set_title(output, metadata)
-        dimensions <- transfer.server::get_dimensions(metadata)
+        dimensions <<- transfer.server::get_dimensions(metadata)
         set_first_dimension(output, dimensions)
     })
+
+    observeEvent(input$dimension,
+        set_second_dimension(input, output, dimensions),
+        ignoreInit = TRUE,
+        ignoreNULL = TRUE
+    )
 }
 
 shinyApp(ui = ui, server = server)
