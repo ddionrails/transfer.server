@@ -2,6 +2,9 @@ library(shiny)
 library(ggplot2)
 library(plotly)
 
+config <- jsonlite::read_json("../config.json")
+metadata_api <- paste(config$data_api, "/", config$metadata_path, sep = "")
+
 
 ui <- function(request) {
     fluidPage(
@@ -33,7 +36,11 @@ server <- function(input, output, session) {
     observe({
         query <- shiny::parseQueryString(session$clientData$url_search)
         request <- list("variable" = query$variable)
-        data <- httr::POST("data-api:5000/meta", body = request, encode = "json")
+        data <- httr::POST(
+            metadata_api,
+            body = request,
+            encode = "json"
+        )
         metadata <- jsonlite::fromJSON(httr::content(data, "text"))
         cat(file = stderr(), paste("data: ", metadata, "\n"))
 

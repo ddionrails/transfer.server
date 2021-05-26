@@ -1,0 +1,5 @@
+{
+    "data_api": "data-api:5000",
+    "data_path": "data",
+    "metadata_path": "meta"
+}
