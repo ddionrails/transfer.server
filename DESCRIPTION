@@ -1,0 +1,27 @@
+Package: transfer.server
+Title: Shiny server for the transfer project
+Version: 0.0.0.9000
+Authors@R: person('Dominique', 'Hansen', email = 'dhansen@diw.de', role = c('cre', 'aut'))
+Description: Display aggregated panel study data.
+License: BSD 3-clause License + file LICENSE
+Imports: 
+    attempt,
+    config (>= 0.3.1),
+    DT,
+    glue,
+    golem (>= 0.3.1),
+    htmltools,
+    processx,
+    shiny (>= 1.6.0),
+    ggplot2,
+    plotly,
+    httr
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.1.1
+Suggests: 
+    spelling,
+    testthat (>= 3.0.0),
+    languageserver
+Config/testthat/edition: 3
+Language: en-US
