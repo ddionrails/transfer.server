@@ -1,6 +1,6 @@
 Package: transfer.server
 Title: Shiny server for the transfer project
-Version: 0.0.0.9000
+Version: 0.0.1
 Authors@R: person('Dominique', 'Hansen', email = 'dhansen@diw.de', role = c('cre', 'aut'))
 Description: Display aggregated panel study data.
 License: BSD 3-clause License + file LICENSE

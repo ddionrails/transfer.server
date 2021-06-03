@@ -27,6 +27,7 @@ ui <- function(request) {
                     "Konfidenzintervall",
                     value = TRUE
                 ),
+                downloadButton("download_data", "Download CSV"),
                 width = 2,
             ),
             mainPanel(
@@ -99,14 +100,13 @@ get_metadata <- function(session, api_url) {
 }
 
 get_data <- function(metadata, input) {
-    dimensions <- c()
-    if ("first_dimension" %in% input) {
+    dimensions <- NULL
+    cat(file = stderr(), "In get_data", "\n")
+    if (input$first_dimension != "none") {
         dimensions <- input$first_dimension
     }
-    if ("second_dimension" %in% names(input)) {
-        if (input[["second_dimension"]] != "none") {
-            dimensions <- c(dimensions, input$second_dimension)
-        }
+    if (input[["second_dimension"]] != "none") {
+        dimensions <- c(dimensions, input$second_dimension)
     }
     if (is.null(dimensions)) {
         request <- list(
@@ -119,7 +119,6 @@ get_data <- function(metadata, input) {
             "dimensions" = as.list(c(dimensions))
         )
     }
-    cat(file = stderr(), paste(request), "\n\n")
     response <- httr::POST(
         data_api,
         body = request,
@@ -135,73 +134,101 @@ render_plot <- function(input, output, data_plot) {
         } else {
             data_plot$disable_confidence_interval()
         }
-        cat(file = stderr(), paste(input$year_range), "\n")
-        cat(file = stderr(), paste(data_plot$year_selection), "\n")
         data_plot$set_year_range(year_range = input$year_range)
-        cat(file = stderr(), paste(data_plot$year_selection), "\n")
 
         return(data_plot$plot())
     })
 }
 
-reload_plot <- function(metadata, input) {
-    plot_data <- get_data(metadata, input)
-    data_plot <- soep.plots::numeric_plot(
-        fields = list(
-            "year" = list("label" = "Erhebungsjahr"),
-            "weighted_mean" = list("label" = "Durchschnittsgehalt")
-        ),
-        data = plot_data,
-        x_axis = "year",
-        y_axis = "weighted_mean",
-        group_by = as.vector(metadata$dimensions$column),
-    )
-    return(data_plot)
-}
-
 server <- function(input, output, session) {
-    dimensions <- list()
     plot_data <- data.frame()
     data_plot <- NULL
-    metadata <- NULL
-    observe({
-        metadata <<- get_metadata(session = session, api_url = metadata_api)
-
-        set_title(output, metadata)
-        set_year_range(output, metadata)
-        dimensions <<- transfer.server::get_dimensions(metadata)
-        dimensions["Keine"] <<- "none"
-        set_first_dimension(output, dimensions)
-        plot_data <<- get_data(metadata, input)
-        cat(file = stderr(), paste(colnames(plot_data)), "\n")
-        data_plot <<- soep.plots::numeric_plot(
-            fields = list(
-                "year" = list("label" = "Erhebungsjahr"),
-                "weighted_mean" = list("label" = "Durchschnittsgehalt")
-            ),
-            data = plot_data,
-            x_axis = "year",
-            y_axis = "mean",
-            group_by = vector(),
-        )
-        cat(file = stderr(), paste(data_plot$data$mean), "\n")
-        render_plot(input, output, data_plot)
+    metadata <- eventReactive("", {
+        cat(file = stderr(), "In metadata", "\n")
+        return(get_metadata(session = session, api_url = metadata_api))
     })
+    observeEvent(metadata(), {
+        cat(file = stderr(), "In dimension", "\n")
+        dimensions <- transfer.server::get_dimensions(metadata())
+        dimensions["Keine"] <- "none"
+        set_first_dimension(output, dimensions)
+        return(dimensions)
+    })
+    observeEvent(input$first_dimension, {
+        set_second_dimension(
+            input,
+            output,
+            transfer.server::get_dimensions(metadata())
+        )
+    })
+    plot_data <- eventReactive(
+        {
+            input$first_dimension
+            input$second_dimension
+        },
+        {
+            cat(file = stderr(), "In plot data", "\n")
+            get_data(metadata(), input)
+        },
+        ignoreNULL = TRUE
+    )
+
+    group_by <- eventReactive(
+        {
+            input$first_dimension
+            input$second_dimension
+            plot_data()
+        },
+        {
+            cat(file = stderr(), "In group", "\n")
+            if (input$first_dimension == "none") {
+                return(vector())
+            }
+            if (input$second_dimension != "none") {
+                return(c(input$first_dimension, input$second_dimension))
+            }
+            return(input$first_dimension)
+        }
+    )
+
+    set_title(output, metadata())
+    set_year_range(output, metadata())
 
     observeEvent(
-        input$first_dimension,
-        set_second_dimension(input, output, dimensions),
-    )
-    observeEvent(
-        input$first_dimension,
-        function() {
-            data_plot <<- reload_plot(metadata, input)
-            render_plot(input, output, data_plot)
+        {
+            plot_data()
+            input
         },
-    )
-    observeEvent(
-        input$year_range,
-        render_plot(input, output, data_plot)
+        {
+            data_plot <- soep.plots::numeric_plot(
+                fields = list(
+                    "year" = list("label" = "Erhebungsjahr"),
+                    "weighted_mean" = list("label" = "Durchschnittsgehalt")
+                ),
+                data = plot_data(),
+                x_axis = "year",
+                y_axis = "mean",
+                group_by = group_by(),
+            )
+            output$download_data <- downloadHandler(
+                filename = "data.csv",
+                content = function(file) {
+                    write.csv(data_plot$get_data(), file, row.names = FALSE)
+                }
+            )
+
+
+            output$plot <- renderPlotly({
+                if (input$confidence_interval) {
+                    data_plot$enable_confidence_interval()
+                } else {
+                    data_plot$disable_confidence_interval()
+                }
+                data_plot$set_year_range(year_range = input$year_range)
+
+                return(data_plot$plot())
+            })
+        }
     )
 }
 
