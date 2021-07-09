@@ -1,4 +1,3 @@
-import os
 import unittest
 from pathlib import Path
 from time import sleep
@@ -80,6 +79,13 @@ class TestUI(unittest.TestCase):
         plot_download_button.click()
         png_directory = Path(self.download_dir).joinpath("newplot.png")
         self.assertTrue(wait_for_file_to_exist(png_directory, 10))
+
+        test_path = Path(__file__).parent.resolve()
+        with open(test_path.joinpath("test_data/newplot.png"), "rb") as png:
+            expected_png = png.read()
+        with open(png_directory, "rb") as png:
+            result_png = png.read()
+        self.assertEqual(expected_png, result_png)
 
     def tearDown(self) -> None:
         self.browser.close()
