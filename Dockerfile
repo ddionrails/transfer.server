@@ -1,4 +1,4 @@
-FROM rocker/shiny
+FROM rocker/shiny:4.0.5
 
 ADD ./shiny-server.conf /etc/shiny-server/shiny-server.conf
 ADD ./ /srv/transfer.server

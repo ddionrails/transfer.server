@@ -101,7 +101,6 @@ get_metadata <- function(session, api_url) {
 
 get_data <- function(metadata, input) {
     dimensions <- NULL
-    cat(file = stderr(), "In get_data", "\n")
     if (input$first_dimension != "none") {
         dimensions <- input$first_dimension
     }
@@ -136,19 +135,58 @@ render_plot <- function(input, output, data_plot) {
         }
         data_plot$set_year_range(year_range = input$year_range)
 
-        return(data_plot$plot())
+        return(ggplotly(data_plot$plot(), tooltip = "text"))
     })
 }
 
 server <- function(input, output, session) {
-    plot_data <- data.frame()
-    data_plot <- NULL
     metadata <- eventReactive("", {
-        cat(file = stderr(), "In metadata", "\n")
         return(get_metadata(session = session, api_url = metadata_api))
     })
+    plot_data <- eventReactive(
+        {
+            input$first_dimension
+            input$second_dimension
+        },
+        {
+            if (
+                input$first_dimension == input$second_dimension ||
+                    input$first_dimension == "none"
+            ) {
+                shiny::updateSelectInput(
+                    session,
+                    "second_dimension",
+                    selected = "none"
+                )
+            }
+            get_data(metadata(), input)
+        },
+        ignoreNULL = TRUE
+    )
+    group_by <- eventReactive(
+        {
+            input$first_dimension
+            input$second_dimension
+            plot_data()
+        },
+        {
+            if (input$first_dimension == "none") {
+                return(vector())
+            }
+            if (input$second_dimension != "none") {
+                return(
+                    c(input$first_dimension, input$second_dimension)
+                )
+            }
+            return(input$first_dimension)
+        }
+    )
+
+    set_title(output, metadata())
+    set_year_range(output, metadata())
+
+
     observeEvent(metadata(), {
-        cat(file = stderr(), "In dimension", "\n")
         dimensions <- transfer.server::get_dimensions(metadata())
         dimensions["Keine"] <- "none"
         set_first_dimension(output, dimensions)
@@ -161,57 +199,39 @@ server <- function(input, output, session) {
             transfer.server::get_dimensions(metadata())
         )
     })
-    plot_data <- eventReactive(
-        {
-            input$first_dimension
-            input$second_dimension
-        },
-        {
-            cat(file = stderr(), "In plot data", "\n")
-            get_data(metadata(), input)
-        },
-        ignoreNULL = TRUE
-    )
-
-    group_by <- eventReactive(
-        {
-            input$first_dimension
-            input$second_dimension
-            plot_data()
-        },
-        {
-            cat(file = stderr(), "In group", "\n")
-            if (input$first_dimension == "none") {
-                return(vector())
-            }
-            if (input$second_dimension != "none") {
-                return(c(input$first_dimension, input$second_dimension))
-            }
-            return(input$first_dimension)
-        }
-    )
-
-    set_title(output, metadata())
-    set_year_range(output, metadata())
-
     observeEvent(
         {
             plot_data()
             input
         },
         {
-            data_plot <- soep.plots::numeric_plot(
+            arguments <- list(
                 fields = list(
                     "year" = list("label" = "Erhebungsjahr"),
-                    "weighted_mean" = list("label" = "Durchschnittsgehalt")
+                    "mean" = list("label" = "Mittelwert")
                 ),
                 data = plot_data(),
                 x_axis = "year",
-                y_axis = "mean",
-                group_by = group_by(),
+                y_axis = "mean"
             )
+            group_axis <- group_by()
+            if (length(group_axis) > 0) {
+                arguments[["group_axis"]] <- group_axis
+            }
+            data_plot <- do.call(soep.plots::numeric_plot, arguments)
+
+
+            filename <- paste0(
+                gsub(" ", "_", metadata()$title),
+                "_",
+                paste(group_by(), collapse = "_")
+            )
+            filename <- gsub("\\_$", "", filename)
             output$download_data <- downloadHandler(
-                filename = "data.csv",
+                filename = paste0(
+                    filename,
+                    ".csv"
+                ),
                 content = function(file) {
                     write.csv(data_plot$get_data(), file, row.names = FALSE)
                 }
@@ -226,7 +246,7 @@ server <- function(input, output, session) {
                 }
                 data_plot$set_year_range(year_range = input$year_range)
 
-                return(data_plot$plot())
+                return(ggplotly(data_plot$plot(), tooltip = "text"))
             })
         }
     )
