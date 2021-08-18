@@ -50,7 +50,7 @@ ui <- function(request) {
                 width = 2,
             ),
             mainPanel(
-                includeHTML("./app.html"),
+                includeHTML("../app.html"),
                 fluidRow(
                     plotlyOutput("plot"),
                 ),
@@ -370,43 +370,7 @@ server <- function(input, output, session) {
             cat(file = stderr(), paste(arguments[["group_axis"]]), "\n")
             cat(file = stderr(), paste(arguments[["dimension_metadata"]]), "\n")
             data_plot <- do.call(soep.plots::categorical_plot, arguments)
-            # data_plot <- soep.plots::categorical_plot(
-            #    fields = list(
-            #        "year" = list("label" = "Erhebungsjahr"),
-            #        "percent" = list("label" = "Anteil in Prozent")
-            #    ),
-            #    data = plot_data(),
-            #    x_axis = "year",
-            #    y_axis = "percent",
-            #    dimension_metadata = list(),
-            #    group_axis = c("pli0098_h")
-            # )
-            #    data_plot <- soep.plots::numeric_plot(
-            #        fields = list(
-            #            "year" = list("label" = "Erhebungsjahr"),
-            #            "weighted_mean" = list("label" = "Durchschnittsgehalt")
-            #        ),
-            #        data = plot_data(),
-            #        x_axis = "year",
-            #        y_axis = "mean",
-            #        group_by = group_by(),
-            #    )
 
-            #    filename <- paste0(
-            #        gsub(" ", "_", metadata()$title),
-            #        "_",
-            #        paste(group_by(), collapse = "_")
-            #    )
-            #    filename <- gsub("\\_$", "", filename)
-            #    output$download_data <- downloadHandler(
-            #        filename = paste0(
-            #            filename,
-            #            ".csv"
-            #        ),
-            #        content = function(file) {
-            #            write.csv(data_plot$get_data(), file, row.names = FALSE)
-            #        }
-            #    )
 
             if (input$bar_chart) {
                 data_plot$set_to_bar()

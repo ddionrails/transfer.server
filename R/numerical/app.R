@@ -31,7 +31,7 @@ ui <- function(request) {
                 width = 2,
             ),
             mainPanel(
-                includeHTML("./app.html"),
+                includeHTML("../app.html"),
                 fluidRow(
                     plotlyOutput("plot"),
                 ),
