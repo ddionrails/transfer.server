@@ -14,6 +14,8 @@ ui <- function(request) {
         sidebarLayout(
             sidebarPanel(
                 uiOutput("year_range"),
+                uiOutput("start_year"),
+                uiOutput("end_year"),
                 tags$div(
                     id = "dimension",
                     uiOutput("first_dimension"),
@@ -41,7 +43,12 @@ ui <- function(request) {
     )
 }
 
-set_title <- function(output, metadata) {
+set_title <- function(output, metadata, query) {
+    if (!is.null(query["no-title"])) {
+        if (query["no-title"] == "TRUE") {
+            return()
+        }
+    }
     output$title <- shiny::renderUI({
         return(shiny::titlePanel(as.character(metadata$title)))
     })
@@ -74,6 +81,15 @@ set_second_dimension <- function(input, output, dimensions) {
     })
 }
 
+set_year_text_input <- function(output, start_year, end_year){
+    output$start_year <- shiny::renderUI({
+        shiny::textInput("start_year", "", value=start_year)
+    })
+    output$end_year <- shiny::renderUI({
+        shiny::textInput("end_year", "", value=end_year)
+    })
+}
+
 set_year_range <- function(output, metadata) {
     output$year_range <- shiny::renderUI({
         shiny::sliderInput(
@@ -88,8 +104,7 @@ set_year_range <- function(output, metadata) {
     })
 }
 
-get_metadata <- function(session, api_url) {
-    query <- shiny::parseQueryString(session$clientData$url_search)
+get_metadata <- function(query, api_url) {
     request <- list("variable" = query$variable)
     response <- httr::POST(
         api_url,
@@ -140,8 +155,12 @@ render_plot <- function(input, output, data_plot) {
 }
 
 server <- function(input, output, session) {
-    metadata <- eventReactive("", {
-        return(get_metadata(session = session, api_url = metadata_api))
+    query <- eventReactive("", {
+        return(shiny::parseQueryString(session$clientData$url_search))
+    })
+
+    metadata <- eventReactive(query(), {
+        return(get_metadata(query = query(), api_url = metadata_api))
     })
     plot_data <- eventReactive(
         {
@@ -182,9 +201,40 @@ server <- function(input, output, session) {
         }
     )
 
-    set_title(output, metadata())
-    set_year_range(output, metadata())
+    observeEvent(metadata(), {
+        set_title(output, metadata(), query())
+    })
+    observeEvent(metadata(), {
+        query_ <- unlist(query())
+        if (
+            !is.na(
+                as.numeric(
+                    query_["start-year"]
+                )
+            ) &&
+                !is.na(
+                    as.numeric(
+                        query_["end-year"]
+                    )
+                )
+        ) {
+            set_year_text_input(output, query_["start-year"], query_["end-year"])
+            return()
+        }
+        set_year_range(output, metadata())
+    })
 
+    year_range <- eventReactive(list(input$year_range, query(), input$start_year, input$end_year), {
+        query_ <- unlist(query())
+        cat(file=stderr(), '"', paste(typeof(input$start_year)), '"', "\n")
+        query_range <- c(input$start_year, input$end_year)
+        if (!is.null(query_range)) {
+            cat(file = stderr(), paste(query_range), "\n")
+            return(as.numeric(query_range))
+        }
+        cat(file = stderr(), paste(input$year_range), "\n")
+        return(input$year_range)
+    })
 
     observeEvent(metadata(), {
         dimensions <- transfer.server::get_dimensions(metadata())
@@ -244,7 +294,7 @@ server <- function(input, output, session) {
                 } else {
                     data_plot$disable_confidence_interval()
                 }
-                data_plot$set_year_range(year_range = input$year_range)
+                data_plot$set_year_range(year_range = year_range())
 
                 return(ggplotly(data_plot$plot(), tooltip = "text"))
             })

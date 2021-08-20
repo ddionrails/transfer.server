@@ -14,6 +14,8 @@ ui <- function(request) {
         sidebarLayout(
             sidebarPanel(
                 uiOutput("year_range"),
+                uiOutput("start_year"),
+                uiOutput("end_year"),
                 tags$div(
                     id = "dimension",
                     uiOutput("first_dimension"),
@@ -61,7 +63,6 @@ ui <- function(request) {
 }
 
 set_title <- function(output, metadata, query) {
-    cat(file = stderr(), paste(query["no-title"]), "\n")
     if (!is.null(query["no-title"])) {
         if (query["no-title"] == "TRUE") {
             return()
@@ -156,6 +157,15 @@ set_second_dimension <- function(input, output, dimensions) {
             choices = dimensions,
             selected = selected
         )
+    })
+}
+
+set_year_text_input <- function(output, start_year, end_year){
+    output$start_year <- shiny::renderUI({
+        shiny::textInput("start_year", "", value=start_year)
+    })
+    output$end_year <- shiny::renderUI({
+        shiny::textInput("end_year", "", value=end_year)
     })
 }
 
@@ -289,17 +299,19 @@ server <- function(input, output, session) {
                     )
                 )
         ) {
+            set_year_text_input(output, query_["start-year"], query_["end-year"])
             return()
         }
         set_year_range(output, metadata())
     })
 
-    year_range <- eventReactive(list(input$year_range, query()), {
+    year_range <- eventReactive(list(input$year_range, query(), input$start_year, input$end_year), {
         query_ <- unlist(query())
-        query_range <- as.numeric(c(query_["start-year"], query_["end-year"]))
-        if (!is.na(query_range)) {
+        cat(file=stderr(), '"', paste(typeof(input$start_year)), '"', "\n")
+        query_range <- c(input$start_year, input$end_year)
+        if (!is.null(query_range)) {
             cat(file = stderr(), paste(query_range), "\n")
-            return(query_range)
+            return(as.numeric(query_range))
         }
         cat(file = stderr(), paste(input$year_range), "\n")
         return(input$year_range)
