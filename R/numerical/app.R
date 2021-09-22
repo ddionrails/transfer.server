@@ -29,6 +29,14 @@ ui <- function(request) {
                     "Konfidenzintervall",
                     value = TRUE
                 ),
+                conditionalPanel(
+                    condition = "input.first_dimension != 'none'",
+                    checkboxInput(
+                        "hide_legend",
+                        "Legende ausblenden",
+                        value = FALSE
+                    )
+                ),
                 downloadButton("download_data", "Download CSV"),
                 width = 2,
             ),
@@ -296,7 +304,13 @@ server <- function(input, output, session) {
                 }
                 data_plot$set_year_range(year_range = year_range())
 
-                return(ggplotly(data_plot$plot(), tooltip = "text"))
+                plotly_plot <- ggplotly(data_plot$plot(), tooltip = "text")
+                
+                if(input$hide_legend){
+                    plotly_plot <- plotly_plot %>% layout(showlegend = FALSE)
+                } 
+
+                return(plotly_plot)
             })
         }
     )

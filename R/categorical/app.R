@@ -48,6 +48,11 @@ ui <- function(request) {
                     "Säulendiagramm",
                     value = FALSE
                 ),
+                checkboxInput(
+                    "hide_legend",
+                    "Legende ausblenden",
+                    value = FALSE
+                ),
                 downloadButton("download_data", "Download CSV"),
                 width = 2,
             ),
@@ -346,7 +351,7 @@ server <- function(input, output, session) {
         )
     })
     reaction_list <- reactive({
-        list(input$first_value, input$second_value, input$confidence_interval, input$bar_chart, year_range())
+        list(input$hide_legend, input$first_value, input$second_value, input$confidence_interval, input$bar_chart, year_range())
     })
     observeEvent(
         {
@@ -399,7 +404,13 @@ server <- function(input, output, session) {
                 }
                 data_plot$set_year_range(year_range = year_range())
 
-                return(ggplotly(data_plot$plot(), tooltip = "text"))
+                plotly_plot <- ggplotly(data_plot$plot(), tooltip = "text")
+                
+                if(input$hide_legend){
+                    plotly_plot <- plotly_plot %>% layout(showlegend = FALSE)
+                } 
+
+                return(plotly_plot)
             })
         }
     )
