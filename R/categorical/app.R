@@ -358,6 +358,21 @@ server <- function(input, output, session) {
             reaction_list()
         },
         {
+            filename <- paste0(
+                gsub(" ", "_", metadata()$title),
+                "_",
+                paste(group_by(), collapse = "_")
+            )
+            output$download_data <- downloadHandler(
+                filename = paste0(
+                    filename,
+                    ".csv"
+                ),
+                content = function(file) {
+                    write.csv(plot_data(), file, row.names = FALSE)
+                }
+            )
+
             arguments <- list(
                 fields = list(
                     "year" = list("label" = "Erhebungsjahr"),
