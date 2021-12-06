@@ -4,8 +4,8 @@ library(plotly)
 library(soep.plots)
 
 config <- jsonlite::read_json("../config.json")
-metadata_api <- paste(config$data_api, "/", config$metadata_path, sep = "")
-data_api <- paste(config$data_api, "/", config$data_path, sep = "")
+metadata_api <- paste(config$data_api, config$metadata_path, sep = "")
+data_api <- paste(config$data_api, config$data_path, sep = "")
 
 
 ui <- function(request) {
@@ -114,12 +114,11 @@ set_year_range <- function(output, metadata) {
 
 get_metadata <- function(query, api_url) {
     request <- list("variable" = query$variable)
-    response <- httr::POST(
+    response <- httr::GET(
         api_url,
-        body = request,
-        encode = "json"
+        query = request
     )
-    return(jsonlite::fromJSON(httr::content(response, "text")))
+    return(jsonlite::fromJSON(txt = httr::content(response, "text")))
 }
 
 get_data <- function(metadata, input) {
@@ -132,19 +131,21 @@ get_data <- function(metadata, input) {
     }
     if (is.null(dimensions)) {
         request <- list(
-            "variable" = metadata$variable,
-            "dimensions" = list()
+            "variable" = metadata$id,
+            "dimensions" = "",
+            "type" = "numerical"
         )
     } else {
         request <- list(
-            "variable" = metadata$variable,
-            "dimensions" = as.list(c(dimensions))
+            "variable" = metadata$id,
+            "dimensions" = paste(c(dimensions), collapse=","),
+            "type" = "numerical"
         )
     }
-    response <- httr::POST(
+
+    response <- httr::GET(
         data_api,
-        body = request,
-        encode = "json"
+        query = request
     )
     return(read.csv(text = httr::content(response, "text")))
 }
@@ -234,13 +235,10 @@ server <- function(input, output, session) {
 
     year_range <- eventReactive(list(input$year_range, query(), input$start_year, input$end_year), {
         query_ <- unlist(query())
-        cat(file=stderr(), '"', paste(typeof(input$start_year)), '"', "\n")
         query_range <- c(input$start_year, input$end_year)
         if (!is.null(query_range)) {
-            cat(file = stderr(), paste(query_range), "\n")
             return(as.numeric(query_range))
         }
-        cat(file = stderr(), paste(input$year_range), "\n")
         return(input$year_range)
     })
 

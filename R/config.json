@@ -1,5 +1,5 @@
 {
-    "data_api": "data-api:5000",
-    "data_path": "data",
-    "metadata_path": "meta"
+    "data_api": "http://nginx/api/",
+    "data_path": "statistic",
+    "metadata_path": "statistics-metadata"
 }

@@ -1,4 +1,4 @@
-FROM rocker/shiny:4.0.5
+FROM rocker/shiny:4.1.2
 
 ADD ./shiny-server.conf /etc/shiny-server/shiny-server.conf
 ADD ./ /srv/transfer.server
@@ -11,8 +11,8 @@ RUN apt-get update -y \
     libcurl4-openssl-dev \
     libmagick++-dev \
     git \
-    && Rscript -e 'install.packages("remotes")' \
-    && Rscript -e 'remotes::install_github("rstudio/renv")' \
+    && Rscript -e 'install.packages("devtools")' \
+    && Rscript -e 'devtools::install_github("rstudio/renv")' \
     && Rscript -e "renv::install()" \
     && Rscript -e 'renv::install("./")' \
     && Rscript -e 'renv::install("ddionrails/soep-plots")' \
