@@ -1,0 +1,7 @@
+{
+    "data_api": "http://nginx/api/",
+    "data_path": "statistic",
+    "metadata_path": "statistics-metadata",
+    "user": "",
+    "password": ""
+}
