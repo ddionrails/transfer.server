@@ -108,7 +108,7 @@ http_request <- function(url, query){
     }
     return(
         response <- httr::GET(
-            metadata_api,
+            url,
             query = query,
             )
     )
