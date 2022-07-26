@@ -74,6 +74,15 @@ server <- function(input, output, session) {
             )
         )
     })
+    y_scale_limits <- eventReactive(query(), {
+        query_ <- unlist(query())
+        if(all(c("y-min", "y-max") %in% names(query_))){
+        return( c(query_["y-min"], query_["y-max"]))
+        }
+        return(
+            vector()
+        )
+    })
     plot_data <- eventReactive(
         {
             input$first_dimension
@@ -202,6 +211,11 @@ server <- function(input, output, session) {
                     data_plot$enable_confidence_interval()
                 } else {
                     data_plot$disable_confidence_interval()
+                }
+                if (length(y_scale_limits()) == 2){
+                    cat(file=stderr(), paste0(data_plot$y_scale_limits, "\n"))
+                    data_plot$set_y_scale_limits(y_scale_limits =y_scale_limits())
+                    cat(file=stderr(), paste0(length(data_plot$y_scale_limits), "\n"))
                 }
                 data_plot$set_year_range(year_range = year_range())
 
