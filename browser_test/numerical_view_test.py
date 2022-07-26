@@ -10,6 +10,7 @@ from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.by import By
 
 OPTS = Options()
 OPTS.headless = True
@@ -36,8 +37,8 @@ class TestUI(unittest.TestCase):
         self.browser.get("http://localhost:3838/numerical/?variable=pglabgro")
 
     def test_second_dimension_not_displayed(self) -> None:
-        second_dimension = self.browser.find_element_by_id("second_dimension")
-        conditional_container = second_dimension.find_element_by_xpath("..")
+        second_dimension = self.browser.find_element(By.ID, "second_dimension")
+        conditional_container = second_dimension.find_element(By.XPATH, "..")
         WebDriverWait(self.browser, 5).until(
             expected_conditions.invisibility_of_element(conditional_container)
         )
@@ -45,8 +46,8 @@ class TestUI(unittest.TestCase):
 
     def test_second_dimension_displayed(self) -> None:
 
-        second_dimension = self.browser.find_element_by_id("second_dimension")
-        conditional_container = second_dimension.find_element_by_xpath("..")
+        second_dimension = self.browser.find_element(By.ID, "second_dimension")
+        conditional_container = second_dimension.find_element(By.XPATH, "..")
         WebDriverWait(self.browser, 5).until(
             expected_conditions.presence_of_element_located(
                 (By.XPATH, "//div[contains(@class, 'plot-container')]")
