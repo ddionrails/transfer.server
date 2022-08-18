@@ -66,7 +66,7 @@ set_year_range <- function(output, metadata) {
 get_metadata <- function(query) {
     request <- list("variable" = query$variable)
     response <- http_request(metadata_api, request)
-    return(jsonlite::fromJSON(txt = httr::content(response, "text")))
+    return(jsonlite::fromJSON(txt = httr::content(response, "text", encoding="utf-8")))
 }
 
 #' @export get_data
