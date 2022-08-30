@@ -4,8 +4,10 @@ library(soep.plots)
 
 ui <- function(request) {
     fluidPage(
+        shinyjs::useShinyjs(),
         uiOutput("title"),
         sidebarLayout(
+            div( id = "menu", 
             sidebarPanel(
                 uiOutput("year_range"),
                 uiOutput("start_year"),
@@ -32,14 +34,13 @@ ui <- function(request) {
                     )
                 ),
                 downloadButton("download_data", "Download CSV"),
-                width = 2,
-            ),
+            )),
             mainPanel(
                 includeHTML("../app.html"),
                 fluidRow(
+                    actionButton("toggle_sidebar", "Menu Aus-/Einblenden"),
                     plotlyOutput("plot"),
-                ),
-                width = 10,
+                )
             )
         )
     )
@@ -166,6 +167,12 @@ server <- function(input, output, session) {
             transfer.server::get_dimensions(metadata())
         )
     })
+
+  observeEvent(input$toggle_sidebar, {
+    transfer.server::toggle_menu()
+  })
+
+
     observeEvent(
         {
             plot_data()
