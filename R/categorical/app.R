@@ -6,8 +6,10 @@ library(soep.plots)
 
 ui <- function(request) {
     fluidPage(
+        shinyjs::useShinyjs(),
         uiOutput("title"),
         sidebarLayout(
+            div( id = "menu", 
             sidebarPanel(
                 uiOutput("year_range"),
                 uiOutput("start_year"),
@@ -49,15 +51,15 @@ ui <- function(request) {
                     "Legende ausblenden",
                     value = FALSE
                 ),
-                downloadButton("download_data", "Download CSV"),
-                width = 2,
+                downloadButton("download_data", "Download CSV")
+            )
             ),
             mainPanel(
                 includeHTML("../app.html"),
                 fluidRow(
+                    actionButton("toggle_sidebar", "Menu Aus-/Einblenden"),
                     plotlyOutput("plot"),
-                ),
-                width = 10,
+                )
             )
         )
     )
@@ -242,6 +244,13 @@ server <- function(input, output, session) {
     reaction_list <- reactive({
         list(input$hide_legend, input$first_value, input$second_value, input$confidence_interval, input$bar_chart, year_range())
     })
+
+
+    observeEvent(input$toggle_sidebar, {
+        transfer.server::toggle_menu()
+    })
+
+
     observeEvent(
         {
             reaction_list()

@@ -115,3 +115,11 @@ http_request <- function(url, query){
     
 
 }
+
+#' @export toggle_menu
+toggle_menu <- function(){
+    shinyjs::toggle(id = "menu")
+    shinyjs::toggleClass(class="col-sm-12", selector="div[role=main]")
+    shinyjs::toggleClass(class="col-sm-8", selector="div[role=main]")
+    shinyjs::runjs("$(window).trigger('resize')")
+}
