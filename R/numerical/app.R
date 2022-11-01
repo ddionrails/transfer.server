@@ -3,6 +3,11 @@ library(ggplot2)
 library(plotly)
 library(soep.plots)
 
+measure_types <- list(
+                            "Mittelwert" = "mean",
+                            "Median" = "median"
+                        )
+
 ui <- function(request) {
     fluidPage(
         uiOutput("title"),
@@ -18,6 +23,25 @@ ui <- function(request) {
                         condition = "input.first_dimension != 'none'",
                         uiOutput("second_dimension")
                     )
+                ),
+                tags$div(
+                    id = "measure",
+                    selectInput(
+                        "measure",
+                        "Metrik:",
+                        choices = measure_types,
+                        selected= "mean"),
+                ),
+                tags$div(
+                    id = "plot_type",
+                    selectInput(
+                        "plot_type",
+                        "Plot Typ:",
+                        list(
+                            "Linienplot" = "line",
+                            "Boxplot" = "box"
+                        ),
+                        selected= "line"),
                 ),
                 checkboxInput(
                     "confidence_interval",
@@ -168,19 +192,19 @@ server <- function(input, output, session) {
         )
     })
     observeEvent(
-        {
-            plot_data()
-            input
-        },
+        list(
+            plot_data(),
+            input, input$measure
+        ),
         {
             arguments <- list(
                 fields = list(
                     "year" = list("label" = "Erhebungsjahr"),
-                    "mean" = list("label" = "Mittelwert")
+                    "mean" = list("label" = names(measure_types)[measure_types == input$measure])
                 ),
                 data = plot_data(),
                 x_axis = "year",
-                y_axis = "mean"
+                y_axis = input$measure
             )
             group_axis <- group_by()
             if (length(group_axis) > 0) {
@@ -222,7 +246,7 @@ server <- function(input, output, session) {
                 plotly_plot <- ggplotly(data_plot$plot(), tooltip = "text")
 
                 if (input$hide_legend) {
-                    plotly_plot <- plotly_plot %>% layout(showlegend = FALSE)
+                    plotly_plot <-  layout(plotly_plot, showlegend = FALSE)
                 }
 
                 return(plotly_plot)
