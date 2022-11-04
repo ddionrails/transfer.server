@@ -203,11 +203,13 @@ server <- function(input, output, session) {
             input, input$measure
         ),
         {
+            fields <- list(
+                    list("label" = "Erhebungsjahr"),
+                    list("label" = names(measure_types)[measure_types == input$measure])
+                )
+            names(fields) <- c("year", input$measure)
             arguments <- list(
-                fields = list(
-                    "year" = list("label" = "Erhebungsjahr"),
-                    "mean" = list("label" = names(measure_types)[measure_types == input$measure])
-                ),
+                fields = fields,
                 data = plot_data(),
                 x_axis = "year",
                 y_axis = input$measure
