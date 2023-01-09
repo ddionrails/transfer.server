@@ -1,5 +1,4 @@
 library(shiny)
-library(ggplot2)
 library(plotly)
 library(soep.plots)
 
@@ -219,7 +218,7 @@ server <- function(input, output, session) {
                 }
                 data_plot$set_year_range(year_range = year_range())
 
-                plotly_plot <- ggplotly(data_plot$plot(), tooltip = "text")
+                plotly_plot <- data_plot$plot()
 
                 if (input$hide_legend) {
                     plotly_plot <- plotly_plot %>% layout(showlegend = FALSE)
