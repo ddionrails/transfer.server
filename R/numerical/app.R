@@ -200,12 +200,13 @@ server <- function(input, output, session) {
     observeEvent(
         list(
             plot_data(),
-            input, input$measure
+            input, input$measure, input$plot_type
         ),
         {
             fields <- list(
-                    list("label" = "Erhebungsjahr"),
-                    list("label" = names(measure_types)[measure_types == input$measure])
+                    "year" = list("label" = "Erhebungsjahr"),
+                    "mean" = list("label" = "Durchschnitt"),
+                    "median" = list("label" = "Median")
                 )
             names(fields) <- c("year", input$measure)
             arguments <- list(
@@ -219,6 +220,9 @@ server <- function(input, output, session) {
                 arguments[["group_axis"]] <- group_axis
             }
             data_plot <- do.call(soep.plots::numeric_plot, arguments)
+            if(input$plot_type == "box"){
+                data_plot$set_to_boxplot()
+            }
 
 
             filename <- paste0(
@@ -230,10 +234,10 @@ server <- function(input, output, session) {
             output$download_data <- downloadHandler(
                 filename = paste0(
                     filename,
-                    ".csv"
+                    ".png"
                 ),
                 content = function(file) {
-                    write.csv(data_plot$get_data(), file, row.names = FALSE)
+                    ggsave(file, data_plot$plot(), type="cairo")
                 }
             )
 
