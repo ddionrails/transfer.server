@@ -6,7 +6,7 @@ Description: Display aggregated panel study data.
 License: BSD 3-clause License + file LICENSE
 Imports: 
     shiny (>= 1.6.0),
-    ggplot2,
+    shinyjs,
     plotly,
     httr
 Encoding: UTF-8
