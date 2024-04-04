@@ -264,11 +264,11 @@ server <- function(input, output, session) {
             arguments <- list(
                 fields = list(
                     "year" = list("label" = "Erhebungsjahr"),
-                    "percent" = list("label" = "Anteil in Prozent")
+                    "proportion" = list("label" = "Anteil in Prozent")
                 ),
                 data = plot_data(),
                 x_axis = "year",
-                y_axis = "percent"
+                y_axis = "proportion"
             )
             arguments[["group_axis"]] <- metadata()[["variable"]]
             dimension_filter <- list()
