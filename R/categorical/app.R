@@ -136,7 +136,7 @@ set_second_value_label <- function(output, dimension, value_labels) {
 }
 
 get_value_labels <- function(metadata) {
-    output <- as.list(metadata$dimensions$values)
+    output <- as.list(metadata$dimensions$labels)
     names(output) <- metadata$dimensions$variable
     return(as.list(output))
 }
